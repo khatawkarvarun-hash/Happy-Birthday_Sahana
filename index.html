@@ -1163,13 +1163,28 @@ for(let i=0;i<20;i++){let e=document.createElement('span');e.className='float';e
 
 
 const birthdayMusic=document.getElementById('birthdayMusic');
+let birthdayMusicStarted=false;
 function startBirthdayMusic(){
   if(!birthdayMusic) return;
+  // Keep the audio explicitly unmuted and ask the browser to start playback.
+  birthdayMusic.muted=false;
+  birthdayMusic.volume=1;
   const attempt=birthdayMusic.play();
-  if(attempt && typeof attempt.catch==='function') attempt.catch(()=>{});
+  if(attempt && typeof attempt.then==='function'){
+    attempt.then(()=>{birthdayMusicStarted=true;}).catch(()=>{birthdayMusicStarted=false;});
+  }
 }
-// Try immediately; browsers that block sound autoplay start it on the visitor's first tap/click.
+// Autoplay is only a best-effort attempt; mobile browsers may reject it.
 window.addEventListener('load',startBirthdayMusic,{once:true});
-document.addEventListener('pointerdown',startBirthdayMusic,{once:true,passive:true});
-document.addEventListener('keydown',startBirthdayMusic,{once:true});
+// Start directly inside the visitor's actual interaction. This is the important
+// fallback for mobile Safari/Chrome, which commonly block load-time autoplay.
+['pointerdown','touchend','click','keydown'].forEach(eventName=>{
+  document.addEventListener(eventName,startBirthdayMusic,{passive:true});
+});
+// Explicitly bind the main reveal actions too, so playback is requested in the
+// same user gesture that opens the birthday surprise.
+['unwrapButton','openBtn'].forEach(id=>{
+  const control=document.getElementById(id);
+  if(control) control.addEventListener('click',startBirthdayMusic);
+});
 </script></body></html>
